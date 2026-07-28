@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# script for project 3 example tests
+# script for project 4 example tests
 
-program="project3"
-numbers="30 33 35 36 37 61 62"
-testdir="project3-tests"
+program="project4"
+numbers="40 44 45 46 47 48 49 61 62"
+testdir="project4-tests"
 diffopts=" -a -i -b -w -B "  # ignore whitespace
 
 g++ -Wall -std=c++17 -g *.cpp -o $program

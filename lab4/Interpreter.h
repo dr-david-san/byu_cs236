@@ -32,28 +32,14 @@ public:
       }
     }
 
-    // Rule Evaluation
-    // cn(c,n) :- snap(S,n,A,P),csg(c,S,G).
-    //   C='CS101', N='C. Brown'
-    //   C='CS101', N='P. Patty'
-    //   C='CS101', N='Snoopy'
-    //   C='EE200', N='C. Brown'
-    //   C='EE200', N='P. Patty'
-    // ncg(n,c,g) :- snap(S,n,A,P),csg(c,S,g).
-    //   N='C. Brown', C='CS101', G='A'
-    //   N='C. Brown', C='EE200', G='B+'
-    //   N='P. Patty', C='CS101', G='B'
-    //   N='P. Patty', C='EE200', G='B'
-    //   N='Snoopy', C='CS101', G='C'
-    // cn(c,n) :- snap(S,n,A,P),csg(c,S,G).
-    // ncg(n,c,g) :- snap(S,n,A,P),csg(c,S,g).
-
     cout << "Rule Evaluation" << endl;
     vector<Rule> rules = datalogProgram.getRules();
     for (auto &rule : rules) {
       // cout the rule
-      cout << rule.toString() << endl;
       Relation relation = database.get_relation(rule.getHeadPred().getName());
+      if (!relation.getTuples().empty()) {
+        cout << rule.toString() << endl;
+      }
       for (auto &tuple : relation.getTuples()) {
         cout << "  " << tuple.toString(relation.getScheme()) << endl;
       }
