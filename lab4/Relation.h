@@ -23,6 +23,8 @@ public:
   // func size returns size
   int size() const { return tuples.size(); }
 
+  Scheme getScheme() { return scheme; }
+
   bool addTuple(const Tuple &tuple) { return tuples.insert(tuple).second; }
 
   string toString() const {
@@ -142,9 +144,7 @@ public:
 
     //  add code to complete the join operation
     for (auto &leftTuple : left.tuples) {
-      // cout << "left tuple: " << leftTuple.toString(left.scheme) << endl;
       for (auto &rightTuple : right.tuples) {
-        // cout << "right tuple: " << rightTuple.toString(right.scheme) << endl;
         if (joinable(left.scheme, right.scheme, leftTuple, rightTuple)) {
           Tuple newTuple = joinTuples(leftTuple, rightTuple);
           result.addTuple(newTuple);
@@ -154,5 +154,18 @@ public:
     return result;
   }
 
-  Relation unite(const Relation &right) { ... }
+  set<Tuple> getTuples() { return tuples; }
+
+  bool unite(Relation &incomingRelation) {
+    bool ifAdded = false;
+    Relation &current = *this;
+
+    for (auto &tuple : incomingRelation.getTuples()) {
+      if (current.addTuple(tuple)) {
+        ifAdded = true;
+      }
+    }
+
+    return ifAdded;
+  };
 };

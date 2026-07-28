@@ -22,7 +22,7 @@ public:
     relations.at(relation_name).addTuple(Tuple(value));
   };
 
-  Relation get_relation(string tableName) { return relations.at(tableName); }
+  Relation &get_relation(string tableName) { return relations.at(tableName); }
 };
 
 // later: in the interpreter class, have evaluating schemes, which loops through

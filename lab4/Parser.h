@@ -61,6 +61,10 @@ public:
   Rule(Predicate headPredicate, vector<Predicate> bodyPredicate)
       : headPredicate(headPredicate), bodyPredicate(bodyPredicate) {}
 
+  vector<Predicate> getBodyPred() { return bodyPredicate; };
+
+  Predicate getHeadPred() { return headPredicate; };
+
   string toString() {
     stringstream out;
     out << headPredicate.toString() << " :- ";

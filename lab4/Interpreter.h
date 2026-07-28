@@ -1,5 +1,6 @@
 #include "Database.h"
 #include "Parser.h"
+#include "Relation.h"
 
 class Interpreter {
 private:
@@ -12,20 +13,99 @@ public:
   void run() {
     evaluateSchemes();
     evaluteFacts();
+    evaluateRules();
     evaluateQueries();
   }
 
   void evaluateRules() {
-    vector<Rule> rules = datalogProgram.getRules();
+    bool addedNewTuples = true;
+    int passCount = 0;
+    while (addedNewTuples) {
+      addedNewTuples = false;
+      passCount += 1;
+
+      vector<Rule> rules = datalogProgram.getRules();
+      for (auto &rule : rules) {
+        if (evaluateRule(rule)) {
+          addedNewTuples = true;
+        }
+      }
+    }
+
+    // Rule Evaluation
     // cn(c,n) :- snap(S,n,A,P),csg(c,S,G).
-    Relation leftRelation = database.get_relation("snap");
-    Relation rightRelation = database.get_relation("csg");
-    Relation newRel = leftRelation.join(rightRelation);
-    // mySet.insert(myTuple).second
-    // get headPred
-    // get bodyPred
-    // loop through rules n times...?
-    // cout example: Schemes populated after 2 passes through the Rules.
+    //   C='CS101', N='C. Brown'
+    //   C='CS101', N='P. Patty'
+    //   C='CS101', N='Snoopy'
+    //   C='EE200', N='C. Brown'
+    //   C='EE200', N='P. Patty'
+    // ncg(n,c,g) :- snap(S,n,A,P),csg(c,S,g).
+    //   N='C. Brown', C='CS101', G='A'
+    //   N='C. Brown', C='EE200', G='B+'
+    //   N='P. Patty', C='CS101', G='B'
+    //   N='P. Patty', C='EE200', G='B'
+    //   N='Snoopy', C='CS101', G='C'
+    // cn(c,n) :- snap(S,n,A,P),csg(c,S,G).
+    // ncg(n,c,g) :- snap(S,n,A,P),csg(c,S,g).
+
+    cout << "Rule Evaluation" << endl;
+    vector<Rule> rules = datalogProgram.getRules();
+    for (auto &rule : rules) {
+      // cout the rule
+      cout << rule.toString() << endl;
+      Relation relation = database.get_relation(rule.getHeadPred().getName());
+      for (auto &tuple : relation.getTuples()) {
+        cout << "  " << tuple.toString(relation.getScheme()) << endl;
+      }
+    }
+
+    for (auto &rule : rules) {
+      // cout the rule
+      cout << rule.toString() << endl;
+    }
+    cout << endl;
+
+    cout << "Schemes populated after " << passCount
+         << " passes through the Rules." << endl
+         << endl;
+  }
+
+  bool evaluateRule(Rule &rule) {
+    // rule =
+    //  :- parent(x, y), ancestor(y, z)
+    vector<Predicate> bodyPreds = rule.getBodyPred();
+    vector<Relation> bodyResults;
+    for (auto &body : bodyPreds) {
+      bodyResults.push_back(evaluatePredicate(body));
+    }
+    Relation relation = bodyResults[0];
+    for (int i = 1; i < bodyResults.size(); i++) {
+      relation = relation.join(bodyResults[i]);
+    }
+    vector<int> indexes = getIndexes(relation, rule.getHeadPred());
+    relation = relation.project(indexes);
+
+    // rename
+    Relation &targetRelation =
+        database.get_relation(rule.getHeadPred().getName());
+    Scheme scheme = Scheme(targetRelation.getScheme());
+    relation = relation.rename(scheme);
+
+    // union
+    bool added = targetRelation.unite(relation);
+    return added;
+  }
+
+  vector<int> getIndexes(Relation relation, Predicate headPredicate) {
+    Scheme relScheme = relation.getScheme();
+    vector<int> indexes;
+    for (auto &value : headPredicate.parametersAsStrings()) {
+      auto it = find(relScheme.begin(), relScheme.end(), value);
+      if (it != relScheme.end()) {
+        indexes.push_back(it - relScheme.begin());
+      }
+    }
+    return indexes;
   }
 
   void evaluateSchemes() {
@@ -45,53 +125,62 @@ public:
     }
   }
 
+  // Refactor Queries which returns a relation (ie pass in each query and run
+  // the select, project, rename)
+
+  Relation evaluatePredicate(Predicate &query) {
+    string tableName = query.getName();
+    Relation relation = database.get_relation(tableName);
+    vector<Parameter> columnQueries = query.getParameters();
+
+    // 3 vars initialized - a map for the strings and indexes, vector for
+    // indexes, and vector for names
+    map<string, int> firstSeen; // {'a', 1} first saw a at index 1
+    vector<int> keepIndexes;
+    vector<string> keepNames;
+
+    // for loop using indexes for(i = 0, ...)
+    for (int i = 0; i < columnQueries.size(); i++) {
+      // this is for constant
+      if (columnQueries[i].isConstant) {
+        relation = relation.select(i, columnQueries[i].toString());
+      }
+      // else this is not a constant
+      else {
+        string name = columnQueries[i].toString();
+        // check to see if we have seen the name before (in our map)
+        if (firstSeen.count(name) > 0) {
+          relation = relation.select(firstSeen[name], i);
+        } else {
+          // update firstSeen
+          firstSeen[name] = i;
+          keepIndexes.push_back(i);
+          keepNames.push_back(name);
+        }
+      }
+    }
+    // update relation with project
+    relation = relation.project(keepIndexes);
+
+    // update relation with rename
+    relation = relation.rename(Scheme(keepNames));
+    return relation;
+  }
+
   void evaluateQueries() {
     vector<Predicate> queries = datalogProgram.getQueries();
     // for loop quieres -> query
+    cout << "Query Evaluation" << endl;
     for (auto &query : queries) {
-      string tableName = query.getName();
-      Relation relation = database.get_relation(tableName);
-      vector<Parameter> columnQueries = query.getParameters();
 
-      // 3 vars initialized - a map for the strings and indexes, vector for
-      // indexes, and vector for names
-      map<string, int> firstSeen; // {'a', 1} first saw a at index 1
-      vector<int> keepIndexes;
-      vector<string> keepNames;
-
-      // for loop using indexes for(i = 0, ...)
-      for (int i = 0; i < columnQueries.size(); i++) {
-        // this is for constant
-        if (columnQueries[i].isConstant) {
-          relation = relation.select(i, columnQueries[i].toString());
-        }
-        // else this is not a constant
-        else {
-          string name = columnQueries[i].toString();
-          // check to see if we have seen the name before (in our map)
-          if (firstSeen.count(name) > 0) {
-            relation = relation.select(firstSeen[name], i);
-          } else {
-            // update firstSeen
-            firstSeen[name] = i;
-            keepIndexes.push_back(i);
-            keepNames.push_back(name);
-          }
-        }
-      }
-      // update relation with project
-      relation = relation.project(keepIndexes);
-
-      // update relation with rename
-      relation = relation.rename(Scheme(keepNames));
-
+      Relation relation = evaluatePredicate(query);
       // create the output
       cout << query.toString() << "? ";
       if (relation.size() == 0) {
         cout << "No" << endl;
       } else {
         cout << "Yes(" << relation.size() << ")" << endl;
-        if (!keepNames.empty()) {
+        if (!relation.getScheme().empty()) {
           cout << relation.toString();
         }
       }
