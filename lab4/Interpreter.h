@@ -18,6 +18,7 @@ public:
   }
 
   void evaluateRules() {
+    cout << "Rule Evaluation" << endl;
     bool addedNewTuples = true;
     int passCount = 0;
     while (addedNewTuples) {
@@ -26,29 +27,13 @@ public:
 
       vector<Rule> rules = datalogProgram.getRules();
       for (auto &rule : rules) {
+        cout << rule.toString() << endl;
         if (evaluateRule(rule)) {
           addedNewTuples = true;
         }
       }
     }
 
-    cout << "Rule Evaluation" << endl;
-    vector<Rule> rules = datalogProgram.getRules();
-    for (auto &rule : rules) {
-      // cout the rule
-      Relation relation = database.get_relation(rule.getHeadPred().getName());
-      if (!relation.getTuples().empty()) {
-        cout << rule.toString() << endl;
-      }
-      for (auto &tuple : relation.getTuples()) {
-        cout << "  " << tuple.toString(relation.getScheme()) << endl;
-      }
-    }
-
-    for (auto &rule : rules) {
-      // cout the rule
-      cout << rule.toString() << endl;
-    }
     cout << endl;
 
     cout << "Schemes populated after " << passCount
@@ -79,6 +64,7 @@ public:
 
     // union
     bool added = targetRelation.unite(relation);
+
     return added;
   }
 

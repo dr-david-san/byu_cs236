@@ -103,19 +103,6 @@ public:
     return true;
   }
 
-  // make a new empty relation r using scheme s
-
-  // for each tuple t1 in r1
-  //     for each tuple t2 in r2
-
-  // 	if t1 and t2 are joinable
-  // 	    combine t1 and t2 to make tuple t
-  // 	    add tuple t to relation r
-  // 	end if
-
-  //     end for
-  // end for
-
   Scheme joinSchemes(const Scheme &leftScheme, const Scheme &rightScheme) {
     vector<string> allNames(leftScheme.begin(), leftScheme.end());
     for (auto &name : rightScheme) {
@@ -126,12 +113,17 @@ public:
   };
 
   // joinTuples: only runs when we know it is joinable
-  Tuple joinTuples(const Tuple &leftTuple, const Tuple &rightTuple) {
+  // [1, 2, 3, 4] <- [x, y, z, w]; [a, b, c, d] -> [5, 6, 7, 1]
+  Tuple joinTuples(const Scheme &leftScheme, const Scheme &rightScheme,
+                   const Tuple &leftTuple, const Tuple &rightTuple) {
     vector<string> allValues(leftTuple.begin(), leftTuple.end());
-    for (auto &value : rightTuple) {
-      if (find(allValues.begin(), allValues.end(), value) == allValues.end())
-        allValues.push_back(value);
-    };
+    for (int i = 0; i < rightScheme.size(); i++) {
+      const string &rightName = rightScheme.at(i);
+      if (find(leftScheme.begin(), leftScheme.end(), rightName) ==
+          leftScheme.end()) {
+        allValues.push_back(rightTuple.at(i));
+      }
+    }
     return Tuple(allValues);
   }
 
@@ -146,7 +138,8 @@ public:
     for (auto &leftTuple : left.tuples) {
       for (auto &rightTuple : right.tuples) {
         if (joinable(left.scheme, right.scheme, leftTuple, rightTuple)) {
-          Tuple newTuple = joinTuples(leftTuple, rightTuple);
+          Tuple newTuple =
+              joinTuples(left.scheme, right.scheme, leftTuple, rightTuple);
           result.addTuple(newTuple);
         }
       }
@@ -163,6 +156,7 @@ public:
     for (auto &tuple : incomingRelation.getTuples()) {
       if (current.addTuple(tuple)) {
         ifAdded = true;
+        cout << "  " << tuple.toString(current.scheme) << endl;
       }
     }
 
