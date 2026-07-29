@@ -70,3 +70,5 @@ Testing/
 # ignore mac files and submission zip files
 .DS_Store
 *.zip
+*.dSYM
+*.dSYM.zip
