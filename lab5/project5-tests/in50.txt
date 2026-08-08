@@ -1,3 +1,5 @@
+
+
 Schemes:
 Parent(p,c)
 Sibling(a,b)
@@ -16,3 +18,5 @@ Ancestor(x,y):-Parent(x,y).
 Queries:
 Ancestor(x,'ned')?
 Sibling('ned','sue')?
+
+

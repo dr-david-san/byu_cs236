@@ -14,8 +14,16 @@ class Node {
 private:
   set<int> adjacentNodeIDs;
 
+  bool visited = false;
+
 public:
   void addEdge(int adjacentNodeID) { adjacentNodeIDs.insert(adjacentNodeID); }
+
+  set<int> getAdjNodeIDs() { return adjacentNodeIDs; }
+
+  void setVisited(bool val) { visited = val; }
+
+  bool getIsVisited() { return visited; }
 
   string toString() {
     bool first = true;

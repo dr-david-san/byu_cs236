@@ -6,6 +6,7 @@
 #include <cctype>
 #include <map>
 #include <set>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -117,7 +118,7 @@ public:
   Tuple joinTuples(const Scheme &leftScheme, const Scheme &rightScheme,
                    const Tuple &leftTuple, const Tuple &rightTuple) {
     vector<string> allValues(leftTuple.begin(), leftTuple.end());
-    for (int i = 0; i < rightScheme.size(); i++) {
+    for (size_t i = 0; i < rightScheme.size(); i++) {
       const string &rightName = rightScheme.at(i);
       if (find(leftScheme.begin(), leftScheme.end(), rightName) ==
           leftScheme.end()) {
@@ -158,8 +159,7 @@ public:
         ifAdded = true;
         cout << "  " << tuple.toString(current.scheme) << endl;
       }
-    }
-
+    };
     return ifAdded;
-  };
+  }
 };

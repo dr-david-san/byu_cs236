@@ -23,7 +23,7 @@ public:
 
     Graph graph(rules.size());
     // add code to add edges to the graph for the rule dependencies
-    for (int i = 0; i < rules.size(); i++) {
+    for (size_t i = 0; i < rules.size(); i++) {
       stringstream out;
       Rule rule = rules.at(i);
       string ruleString = rule.toString();
@@ -35,7 +35,7 @@ public:
            rule.getBodyPred()) { // predicate name in the body of the from
         // from body predicate: B()
         out << "from body predicate: " << pred.toString() << endl;
-        for (int j = 0; j < rules.size(); j++) {
+        for (size_t j = 0; j < rules.size(); j++) {
           Rule innerRule = rules.at(j);
           string innerRuleString = innerRule.toString();
           if (!innerRuleString.empty()) {
@@ -56,28 +56,59 @@ public:
     return graph;
   }
 
-  void evaluateRules() {
-    cout << "Rule Evaluation" << endl;
-    bool addedNewTuples = true;
-    int passCount = 0;
-    while (addedNewTuples) {
-      addedNewTuples = false;
-      passCount += 1;
+  string formatSCC(vector<int> &scc) {
+    stringstream out;
+    bool first = true;
+    for (int ruleID : scc) {
+      if (!first) {
+        out << ",";
+      }
+      out << "R" << ruleID;
+      first = false;
+    }
+    return out.str();
+  }
 
-      vector<Rule> rules = datalogProgram.getRules();
-      for (auto &rule : rules) {
-        cout << rule.toString() << endl;
-        if (evaluateRule(rule)) {
-          addedNewTuples = true;
+  void evaluateRules() {
+    Graph graph = makeGraph(datalogProgram.getRules());
+    cout << "Dependency Graph\n" << graph.toString() << endl;
+    cout << "Rule Evaluation" << endl;
+    vector<vector<int>> sccs = graph.getSCCs();
+
+    for (auto &scc : sccs) {
+      cout << "SCC: " << formatSCC(scc) << endl;
+
+      bool isTrivial = false;
+      if (scc.size() == 1) {
+        int singleRuleID = *scc.begin();
+        if (!graph.hasEdge(singleRuleID, singleRuleID)) {
+          isTrivial = true;
         }
       }
+
+      int passes = 1;
+      if (isTrivial) {
+        int ruleID = *scc.begin();
+        Rule rule = datalogProgram.getRules()[ruleID];
+        cout << rule.toString() << endl;
+        evaluateRule(rule);
+      } else {
+        passes = 0;
+        bool addedSomething = true;
+        while (addedSomething) {
+          addedSomething = false;
+          passes = passes + 1;
+          for (auto &ruleID : scc) {
+            Rule rule = datalogProgram.getRules()[ruleID];
+            cout << rule.toString() << endl;
+            if (evaluateRule(rule)) {
+              addedSomething = true;
+            }
+          }
+        }
+      }
+      cout << passes << " passes: " << formatSCC(scc) << endl;
     }
-
-    cout << endl;
-
-    cout << "Schemes populated after " << passCount
-         << " passes through the Rules." << endl
-         << endl;
   }
 
   bool evaluateRule(Rule &rule) {
@@ -89,7 +120,7 @@ public:
       bodyResults.push_back(evaluatePredicate(body));
     }
     Relation relation = bodyResults[0];
-    for (int i = 1; i < bodyResults.size(); i++) {
+    for (size_t i = 1; i < bodyResults.size(); i++) {
       relation = relation.join(bodyResults[i]);
     }
     vector<int> indexes = getIndexes(relation, rule.getHeadPred());
@@ -151,7 +182,7 @@ public:
     vector<string> keepNames;
 
     // for loop using indexes for(i = 0, ...)
-    for (int i = 0; i < columnQueries.size(); i++) {
+    for (size_t i = 0; i < columnQueries.size(); i++) {
       // this is for constant
       if (columnQueries[i].isConstant) {
         relation = relation.select(i, columnQueries[i].toString());
@@ -181,7 +212,7 @@ public:
   void evaluateQueries() {
     vector<Predicate> queries = datalogProgram.getQueries();
     // for loop quieres -> query
-    cout << "Query Evaluation" << endl;
+    cout << endl << "Query Evaluation" << endl;
     for (auto &query : queries) {
 
       Relation relation = evaluatePredicate(query);
