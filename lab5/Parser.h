@@ -45,7 +45,7 @@ public:
   string toString() {
     stringstream out;
     out << name << "(";
-    for (int i = 0; i < parameters.size(); i++) {
+    for (size_t i = 0; i < parameters.size(); i++) {
       if (i != 0) {
         out << ",";
       }
@@ -84,7 +84,7 @@ public:
   const string toString() {
     stringstream out;
     out << headPredicate.toString() << " :- ";
-    for (int i = 0; i < bodyPredicate.size(); i++) {
+    for (size_t i = 0; i < bodyPredicate.size(); i++) {
       if (i != 0) {
         out << ",";
       }
